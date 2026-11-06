@@ -106,55 +106,167 @@ Step 15 closes the cycle. Another audit round only if the user asks for it.
 
 **Always:** mark your own guesses as guesses. Only what the user said goes in as theirs.
 
-## The briefs
+## The agents, step by step
 
-### A — map (step 2)
-- Walk end to end through the flows the request touches: entry points, where each piece
-  of data goes, what enters and leaves at each boundary between components (routes,
-  services, external APIs, databases), flags and configuration.
-- Find **who else uses** each piece that might change, not just the main path.
-- Precedents: how existing code or the previous version solves the same thing today
-  (read it in full, not a skim); what earlier plans and audits of that area say
-  (decisions, open items, accepted gaps); the git history of that area.
-- Returns a map with `file:line`, the differences from the precedent, and the project
-  rules that apply. Not whole files.
+Each agent is a fresh `general-purpose` subagent that knows only its brief. This section
+says exactly what each one does, in order, at each point of the cycle. Copy the steps
+into the brief.
 
-### B — how it behaves today (step 2)
-- Uses the real flow. In web apps, the built-in browser (`preview_start` with the
-  project's configuration, if the environment has it); in CLIs or APIs, the terminal. If
-  there is a previous version of the flow, it tests that one too.
-- Runs the existing tests for that area.
-- If the flow does not exist yet, it tests the neighboring flows the request will touch,
-  or is skipped.
-- Returns what happens today, step by step, with evidence as text: what it saw, console
-  errors, responses. Screenshots stay in its own context.
+### When each agent runs
 
-### A continued — impact map of the chosen idea (step 5)
+| Cycle step | Agents | How | Edits anything? |
+|---|---|---|---|
+| 2 | **A** (map) + **B** (how it behaves today) | In parallel, same message | No. A only reads; B runs things but edits no code |
+| 5 | **A continued** (impact map) | Alone | No |
+| 10 | **B** (the plan's tests) + **C** (audit) | In parallel, same message | No. C only reads |
+| 15 | **B** (closing tests) + **C** (review of the fixes' diff) | In parallel, same message | No |
+
+A never takes part in the audit or the closing; C never takes part in steps 2 or 5. You
+write every file and every line of code.
+
+### How to write every brief
+Write it in this order:
+1. **Role and prohibitions first.** For example: "You are agent C (audit, read-only). Do
+   not edit or create files in the repo, do not run the app, do not write to databases,
+   do not commit." Temporary files go to the scratchpad, never the repo.
+2. **Project:** path, stack and how to run what the agent needs (test command, database,
+   ports). Nothing more.
+3. **Context:** the request in a few lines, the user's decisions with dates, the project
+   rules that apply (from `CLAUDE.md` and the memory), and the plan sections and files to
+   read, with line numbers when you have them. Agents do not see the conversation:
+   anything left out does not exist for them.
+4. **What is already verified,** so they do not repeat it (for example "the tests run
+   against the test database; I checked"), and **what another agent covers,** so they do
+   not overlap.
+5. **The task as numbered steps,** taken from this section.
+6. **What to return and in what shape:** tables, `file:line`, severity, pass / fail.
+7. **Always this line:** "If something is unclear, say so ('I don't understand X')
+   instead of guessing."
+
+Launch agents that run in parallel in the same message, in the background. While they
+work, do something useful that does not overlap with them, such as reading the code you
+will need to confirm their findings. Never predict or report a result before it arrives.
+
+### Step 2 — A: map
+- **Gets:** the request, the paths you already know, the earlier plans and audits of the
+  area.
+- **Steps:**
+  1. Find the entry points of every flow the request touches.
+  2. Follow each flow end to end: where each piece of data goes, and what enters and
+     leaves at each boundary between components (routes, services, external APIs,
+     databases).
+  3. Note the flags, configuration and environment variables each flow depends on.
+  4. For each piece that might change, find **who else uses it**, not just the main path.
+  5. Read the precedent in full, not a skim: how existing code, or the previous version,
+     solves the same thing today.
+  6. Read what earlier plans and audits of the area say: decisions, open items, accepted
+     gaps.
+  7. Read the git history of that area.
+- **Never:** edit, or run anything that changes state.
+- **Returns:** the map with `file:line`, the differences from the precedent, and the
+  project rules that apply. Excerpts, not whole files.
+
+### Step 2 — B: how it behaves today
+- **Gets:** the flow to exercise, how to start the app and run the tests, the test data
+  to use, and B's limits (below).
+- **Steps:**
+  1. Before running anything that writes, confirm that it hits the test environment (test
+     database, test number, sandbox keys) and not the user's working data. If it cannot
+     confirm it, it stops and asks.
+  2. Record the state of the working tree (`git status` and a hash of `git diff`).
+  3. Use the real flow: in web apps, the built-in browser (`preview_start` with the
+     project's configuration, if the environment has it); in CLIs or APIs, the terminal.
+  4. If there is a previous version of the flow, test that one too.
+  5. Run the existing tests for that area.
+  6. If the flow does not exist yet, test the neighboring flows the request will touch;
+     if there are none, B is skipped.
+  7. Record the state of the tree again. If it changed while B was testing, say so and
+     rerun on the final state.
+- **Never:** edit the working code, or step outside B's limits.
+- **Returns:** what happens today, step by step, with evidence as text: the exact
+  commands, what it saw, console errors, responses. Screenshots stay in its own context.
+
+### Step 5 — A continued: impact map of the chosen idea
 Continue the same agent A if you can, since it has already read the code. If not, launch
-a new one with A's report. It applies systematic debugging without touching code:
-- **Phase 1:** what enters and leaves at each boundary after the change; where each new
-  piece of data comes from and where it goes.
-- **Phase 2:** compare against the precedent and list **every** difference, saying
-  whether it is intended; dependencies on configuration, flags and environment.
-- **Phase 3, in writing only:** "I think X could break because Y". Each one becomes a
-  verification item in the plan.
-- **Never Phase 4:** no new tests, no fixes.
+a new one with A's report.
+- **Gets:** the chosen idea and the design sections validated so far.
+- **Steps** (systematic debugging without touching code):
+  1. **Phase 1:** for each boundary in the map, what enters and leaves after the change;
+     where each new piece of data comes from and where it goes.
+  2. **Phase 2:** compare against the precedent and list **every** difference, saying
+     whether it is intended; list the dependencies on configuration, flags and
+     environment.
+  3. **Phase 3, in writing only:** "I think X could break because Y". Each one becomes a
+     verification item in the plan.
+- **Never:** Phase 4. No new tests, no fixes.
+- **Returns:** the impact map and the list of "could break" items.
 
-### B — the plan's tests (step 10)
-- Goes through the plan's live test list and runs the tests.
-- Returns each test with its result (pass / fail / could not run) and evidence as text.
+### Step 10 — B: the plan's tests
+- **Gets:** the plan's path (its live test list), how to run the tests, B's limits.
+- **Steps:**
+  1. Confirm the test target, as in step 2.
+  2. Run the build gate the project requires (lint, typecheck, build), the automated
+     tests, and each test in the plan's live list, in order.
+  3. Run the automated tests twice, to see whether they are stable and whether they leave
+     data behind.
+  4. A live test that needs something outside B's limits (a real number, a paid call, a
+     QR scan) is not run: it is reported as "could not run", with the reason.
+- **Never:** edit code or tests to make them pass.
+- **Returns:** each test with pass / fail / could not run, its evidence as text, and the
+  totals (tests, assertions).
 
-### C — audit (step 10)
-Receives the plan's path, the diff (`git diff` against the base branch, plus uncommitted
-changes), the project's rules and A's map. Read-only.
-- Was each step of the plan done as written?
-- What was done outside the plan?
-- Errors, following the data flow of the changed code (Phases 1 and 2), including the
-  consumers in A's map.
-- Only what would cause real problems; no style comments. If nothing serious turns up, it
-  says so.
-- For each finding: severity (critical / high / medium / low), evidence as `file:line`,
-  whether the change **introduced it or it already existed**, and the change it proposes.
+### Step 10 — C: audit
+- **Gets:** the plan's path, the diff (`git diff` against the base branch, plus
+  uncommitted changes), the project's rules and A's map. If the change spans independent
+  areas, split C by area (for example engine and domain), each with its own files,
+  launched in the same message.
+- **Steps:**
+  1. For each step of the plan, check whether it was done as written.
+  2. List what was done outside the plan.
+  3. Follow the data flow of the changed code (Phases 1 and 2), including the consumers
+     in A's map, looking for errors.
+  4. If there is an earlier audit or report of this work, check each of its claims
+     against the code and list the ones that do not hold.
+  5. Keep only what would cause real problems. If nothing serious turns up, say so.
+- **Never:** edit or fix; comment on style.
+- **Returns,** per finding: severity (critical / high / medium / low), evidence as
+  `file:line` with the key snippet, a concrete scenario (input → wrong result), whether
+  the change **introduced it or it already existed**, and the change it proposes, in
+  words.
+
+### Step 11 — You: confirm and write
+1. For each finding of C, and each failure of B, read the cited code yourself.
+2. Mark it **confirmed** if it holds, **unconfirmed** if you could not check it, or drop
+   it and say why if it does not hold.
+3. Write the audit file (see "The files") and update the plan's Status.
+
+### Step 15 — B: closing tests
+- **Gets:** the plan, the audit with the user's decisions, and the list of fixes with
+  the test written for each one in step 14.
+- **Steps:**
+  1. Confirm the test target, as in step 2.
+  2. Rerun the build gate, the automated tests (twice) and the plan's live test list.
+  3. Run the test of each fixed error.
+  4. Note any test whose result changed compared with step 10.
+- **Returns:** the same as in step 10, plus one line per fixed error with its test and
+  the result.
+
+If B's whole job is commands you can run yourself (build and tests, with no live tests),
+you may run them instead and say so in the closing. C still runs as an agent.
+
+### Step 15 — C: review of the fixes' diff
+- **Gets:** only the fixes: what was approved for each one, the files and functions it
+  touched, its new tests, and the project's rules. Not the whole diff of the cycle.
+- **Steps:**
+  1. For each fix: does it do what was approved, no more and no less?
+  2. Does it break anything around it: consumers, concurrency, transactions, types?
+  3. Does it make reachable a problem that was hidden before (code that never ran and
+     now does)?
+  4. Do the new tests prove what they claim, or would they pass with the code broken?
+- **Never:** edit, or audit code the fixes did not touch.
+- **Returns:** a verdict per fix (correct / partial / wrong / introduces a regression)
+  with `file:line`, the new problems with severity and scenario, and the tests that do
+  not prove what they claim.
 
 ### B's limits, always
 - Local only, with the project's test data (seeds, fixtures, example configuration).
@@ -168,21 +280,22 @@ changes), the project's rules and A's map. Read-only.
 - If a test needs any of the above, it stops and reports it; you ask the user.
 
 ### Temporary logs (when needed)
-Only when reading the code and testing the app do not explain what is happening. If an
-agent runs into that, it says so; you launch a separate B to instrument. Tell the user
-in one line what will be instrumented and why.
-- **Where:** in its own worktree, never in the user's working folder or branch. In
-  Claude Code, launch the agent with `isolation: "worktree"`.
-- **Setup:** git does not copy what it ignores. Copy what the app needs into the worktree
-  (such as `.env`) without showing its contents, and install or link the dependencies. If
-  what is being diagnosed is not committed, apply the diff there. If the user's app is
-  already running, use another port.
-- **Logs only observe:** they do not change logic, do not print keys or credentials, and
-  the report does not copy personal data.
-- **Output:** a report for whoever needed it. What is useful goes into the evidence of
-  the plan or the audit, noted as "obtained with temporary logs".
-- **When done:** delete the worktree and its branch, only the ones created for this
-  (check the name first). They are never pushed or merged.
+Only when reading the code and testing the app do not explain what is happening. The
+agent that runs into that says so; you launch a separate B to instrument, and tell the
+user in one line what will be instrumented and why. That B:
+1. Works in its own worktree, never in the user's working folder or branch. In Claude
+   Code, launch it with `isolation: "worktree"`.
+2. Copies into the worktree what the app needs and git ignores (such as `.env`), without
+   showing its contents, and installs or links the dependencies.
+3. If what is being diagnosed is not committed, applies the diff there. If the user's app
+   is already running, uses another port.
+4. Adds logs that only observe: they do not change logic and do not print keys or
+   credentials.
+5. Reproduces the case and collects the output.
+6. Reports to whoever needed it, without copying personal data. What is useful goes into
+   the evidence of the plan or the audit, noted as "obtained with temporary logs".
+7. When it is done, you delete the worktree and its branch: only the ones created for
+   this, after checking the name. They are never pushed or merged.
 
 ## Fixes and closing
 
@@ -198,9 +311,9 @@ Phase 4 of systematic debugging, only for what the user approved:
 Uses the whole cycle: the plan, the audit with the user's decisions, and the diff of the
 fixes.
 - **B:** reruns the plan's live test list, the tests, and one test per fixed error
-  (no regressions).
+  (no regressions). Exact steps in "Step 15 — B".
 - **C:** reviews only the diff of the fixes: does each one do what was approved? Does it
-  break anything around it?
+  break anything around it? Exact steps in "Step 15 — C".
 - **If something approved fails,** you apply full systematic debugging, because B and C
   do not edit. Full means: Phase 1, reproduce it and gather evidence at each boundary;
   Phase 2, compare with what works; Phase 3, one hypothesis at a time, tested with the
