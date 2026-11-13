@@ -1,9 +1,9 @@
 ---
-name: measure-twice2
-description: "Second version of measure-twice; when both are installed, use this one. A full cycle to design, implement, audit and close a change in any project: agents that read the code and test the app (each on the model tier that fits its job), brainstorming with the user, a written plan with success criteria and an independent critique, an audit and a closing pass based on systematic debugging, and the user's decisions at each gate. Use it when the user asks for brainstorm or brainstorming (for example, utiliza brainstorm), a plan with an audit, an audit of what was implemented, or names measure-twice2. In those cases it replaces measure-twice and the superpowers brainstorming and systematic-debugging skills."
+name: measure-twice-gemini
+description: "Antigravity / Gemini edition of measure-twice; when measure-twice is also installed, use this one. A full cycle to design, implement, audit and close a change in any project: agents that read the code and test the app (each on the Gemini model tier that fits its job), brainstorming with the user, a written plan with success criteria and an independent critique, an audit and a closing pass based on systematic debugging, and the user's decisions at each gate. Use it when the user asks for brainstorm or brainstorming (for example, utiliza brainstorm), a plan with an audit, an audit of what was implemented, or names measure-twice-gemini. In those cases it replaces measure-twice and the superpowers brainstorming and systematic-debugging skills."
 ---
 
-# Measure twice 2
+# Measure twice — Gemini
 
 How to design, build, audit and close a change in any project.
 **Agents read and test; you talk, write and implement; the user decides.**
@@ -11,9 +11,11 @@ How to design, build, audit and close a change in any project.
 This skill is self-contained: it does not depend on `measure-twice`, `brainstorming` or
 `systematic-debugging`. If those exist and say something different, this one wins.
 
-Two reference files hold the detail you need only at specific moments. Read each one when
-you reach that moment, not before:
+Three reference files hold the detail you need only at specific moments. Read each one
+when you reach that moment, not before:
 
+- `references/models.md` — before launching the first agent of the cycle: which Gemini
+  model is each tier, how to choose it in Antigravity, and what to do when quota runs out.
 - `references/agent-briefs.md` — before launching any agent (steps 2, 5, 7b, 10, 15).
 - `references/templates.md` — before writing the plan (step 7) or the audit (step 11).
 
@@ -22,9 +24,10 @@ you reach that moment, not before:
 1. **Check for a cycle already in progress.** Look in the project's plans folder for a
    plan on this topic whose Status is not closed. If there is one, go to "Resuming" at
    the end of this file instead of starting over.
-2. Read the project's rules: `CLAUDE.md` / `AGENTS.md` and the project memory. That is
-   where you find what must not break, the verification gate (build, lint, tests), where
-   plans live, and which actions have external effects.
+2. Read the project's rules: `AGENTS.md`, `GEMINI.md` or whichever rules file the project
+   uses, and the project memory. That is where you find what must not break, the
+   verification gate (build, lint, tests), where plans live, and which actions have
+   external effects.
 3. Find the folder where the project keeps plans and audits (files like `*-plan-*.md` or
    `*-audit*.md`) and follow its naming. If there is none, ask once where to put them and
    record the answer in the project memory.
@@ -38,8 +41,9 @@ you reach that moment, not before:
 
    If unsure, pick the heavier path. If complexity shows up midway, move up a path and
    say so. Never move down.
-5. If the harness has a task list, put the cycle's steps on it and keep it current. The
-   plan's **Status** line is still the source of truth across sessions.
+5. If the harness has a task list (in Antigravity, a task artifact), put the cycle's
+   steps on it and keep it current. The plan's **Status** line is still the source of
+   truth across sessions.
 
 ## Systematic debugging, in four phases
 
@@ -65,15 +69,16 @@ what the user approved.
 | **User** | Decides: which idea, whether the plan is approved, what to do with each finding | — |
 | **You (main model)** | Talk with the user, write the agents' briefs, write the files, implement, confirm findings | Implement without approval |
 | **A — reads** | Code map, precedents, impact map | Edit, or run anything that changes state |
-| **B — tests** | Uses the project for real: the app, the tests, read-only queries and, when needed, temporary logs in a worktree | Edit the working code; cause external effects without permission |
+| **B — tests** | Uses the project for real: the app, the tests, read-only queries and, when needed, temporary logs in an isolated workspace | Edit the working code; cause external effects without permission |
 | **C — audits** | Critiques the plan before it is approved; compares what was implemented against the plan and looks for errors, by reading | Edit or fix |
 
 Agents do not see the conversation. Each brief carries everything: the request, what was
 decided, the project's rules, the relevant paths and what to return. Write in the brief
-what the agent must not do, and when the harness offers an agent type whose tools already
-enforce it (a read-only type for A and C), prefer that type: a missing tool is a stronger
-guarantee than a sentence. When two agents run in parallel, launch them in the same
-message.
+what the agent must not do, and prefer an agent type whose tools already enforce it: a
+missing tool is a stronger guarantee than a sentence. In Antigravity that means
+`research` (read-only) for A and C, `self` for B, and a separate `browser` agent when B
+has to use a web UI; `references/models.md` has the details. When two agents run in
+parallel, launch them in the same message.
 
 **If something is unclear, say so** ("I don't understand X") instead of guessing. This
 applies to you and to all three agents, and it goes in every brief.
@@ -84,30 +89,34 @@ Each job goes to the cheapest tier that does it well. The audit is the exception
 the strongest read available, because a missed error costs more than every agent in the
 cycle put together.
 
-| Tier | What it is good for here | Gemini models (Antigravity alias) | Claude equivalents |
-|---|---|---|---|
-| **Deep** | Design trade-offs, finding errors by reasoning, judging whether a fix is correct | Gemini 4 Carbon, Gemini 4 Argon (`gemini-4-argon-high`, `pro`) | Fable 5.2 (`fable`), Opus 5.5 (`opus`) |
-| **Standard** | Reading and following flows across many files, driving the app and the browser, running and interpreting tests | Gemini 4 Hydrogen (`gemini-4-hydrogen-high` / `medium`, `flash`) | Sonnet 5.5 (`sonnet`) |
-| **Fast** | Locating files and usages, running a fixed list of commands and returning the output | Gemini 3.8 Flash (`gemini-3.8-flash-medium` / `low`, `flash_lite`) | Haiku 5.5 (`haiku`) |
+This section names tiers, not models. Which Gemini model and which Antigravity alias
+belong to each tier, how to pick them in `invoke_subagent`, and what to do when quota runs
+out is in `references/models.md`. Read it before launching the first agent of the cycle.
 
-| Job | Step | Tier | Model to try first | When to change it |
-|---|---|---|---|---|
-| **You:** conversation, design, plan, implementation, confirming findings | all | Deep | The session's model (Gemini 4 Carbon or Gemini 4 Argon) | If the session runs on a lower tier (such as Gemini 4 Hydrogen), say so at step 1: the design and the confirmation of findings are where it shows |
-| **A:** map | 2 | Standard | Gemini 4 Hydrogen (`flash`) | Fast — Gemini 3.8 Flash (`flash_lite`) — on a bounded path where the job is only "find the flow and who uses it" |
-| **A:** impact map | 5 | Standard, continued | The same agent A, continued | A fresh Deep agent — Gemini 4 Argon (`pro`) — with A's report when the map shows concurrency, transactions, migrations or more than one subsystem |
-| **B:** how it behaves today; the plan's tests; closing tests | 2, 10, 15 | Standard | Gemini 4 Hydrogen (`flash`) | Fast — Gemini 3.8 Flash (`flash_lite`) — when B's whole job is a fixed list of commands with no live tests and no browser |
-| **B:** temporary logs | on demand | Standard | Gemini 4 Hydrogen (`flash`) | Deep — Gemini 4 Argon (`pro`) — if a first instrumented run did not explain the behavior |
-| **C:** plan critique | 7b | Deep | Gemini 4 Argon (`pro`) | Gemini 4 Carbon (or another Deep model such as Opus 5.5) if you are running on Argon |
-| **C:** audit | 10 | Deep | Gemini 4 Argon (`pro`) | Gemini 4 Carbon (or another Deep model such as Opus 5.5) if you are running on Argon |
-| **C:** review of the fixes' diff | 15 | Deep | The same model as step 10 | Standard — Gemini 4 Hydrogen (`flash`) — only when every fix is low or medium severity and touches one function |
+| Tier | What it is good for here |
+|---|---|
+| **Deep** | Design trade-offs, finding errors by reasoning, judging whether a fix is correct |
+| **Standard** | Reading and following flows across many files, driving the app and the browser, running and interpreting tests |
+| **Fast** | Locating files and usages, running a fixed list of commands and returning the raw output |
+
+| Job | Step | Tier | When to change it |
+|---|---|---|---|
+| **You:** conversation, design, plan, implementation, confirming findings | all | Deep | The session's model, whatever it is. If it is not a Deep-tier model, say so at step 1: the design and the confirmation of findings are where it shows |
+| **A:** map | 2 | Standard | Fast on a bounded path where the job is only "find the flow and who uses it" |
+| **A:** impact map | 5 | Standard, continued | A fresh Deep agent, with A's report, when the map shows concurrency, transactions, migrations or more than one subsystem |
+| **B:** how it behaves today; the plan's tests; closing tests | 2, 10, 15 | Standard | If B's whole job is a fixed list of commands with no live tests and no browser, run them yourself (see "Closing pass"). If you delegate them anyway, Fast may run them, but the comparison with the baseline is yours |
+| **B:** temporary logs | on demand | Standard | Deep if a first instrumented run did not explain the behavior |
+| **C:** plan critique | 7b | Deep | See the fallback order in `references/models.md` if Deep is not available |
+| **C:** audit | 10 | Deep | Same |
+| **C:** review of the fixes' diff | 15 | Deep | Standard only when every fix is low or medium severity and touches one function |
 
 Rules for choosing:
 
-- **C reads with a different model than the one that wrote the code, when there is one of
-  the same tier.** If you implemented on Gemini 4 Carbon, C runs on Gemini 4 Argon, and the
-  other way round (or on another Deep-tier model available in the harness, such as
-  Gemini 4 Hydrogen XHigh or Opus 5.5). A second model does not share the first one's blind
-  spots; the same model tends to agree with itself.
+- **Tier comes before variety.** C runs on a Deep model. If a different Deep model from
+  yours is available to subagents, prefer it: a second model does not share the first
+  one's blind spots. If the only Deep model available is the one you run on, C still uses
+  it, as a fresh agent that has not seen your reasoning. Never drop C to a lower tier just
+  to get a different model.
 - **Never go below Standard for anything that judges** (C in any step, A's impact map).
   Fast is for finding and running, not for deciding whether something is right.
 - **Escalate on evidence, not in advance.** If an agent returns a thin or contradictory
@@ -116,14 +125,11 @@ Rules for choosing:
 - **A continued agent keeps its model.** Continuing A at step 5 is worth more than a
   higher tier, because it has already read the code; switch only in the cases in the
   table.
-- **In Antigravity / Claude Code,** pass the tier alias (`pro`, `flash`, `flash_lite` in
-  `invoke_subagent`, or the exact model ID such as `gemini-4-argon-high`,
-  `gemini-4-hydrogen-high`, `gemini-3.8-flash-medium` in `swarm`; in Claude Code, the
-  `model` parameter of the Agent tool). If the harness cannot choose models, agents
-  inherit yours and this section reduces to "launch fewer, better-briefed agents".
-- **With another provider,** map by tier, not by name: that provider's strongest
-  reasoning model is Deep, its general-purpose model is Standard, its small fast model is
-  Fast. The rule about C using a different model still applies.
+- **Deep quota goes to C first.** When Deep quota is short, skip the optional Deep
+  escalations (A's impact map, B's logs) before touching C. If C cannot run on Deep, follow
+  the fallback in `references/models.md` and tell the user; never downgrade C silently.
+- **Do not start a swarm just to pick a model.** Use `invoke_subagent` with its tier
+  alias. A swarm is heavy on quota and is only for when the user asks for one.
 - Record in the plan's Evidence and in the audit which model produced each report. A
   finding from a Fast agent that nobody confirmed is a lead, not a finding.
 
@@ -169,7 +175,7 @@ it goes to the user as an open item (see "Closing pass").
 
 ## Brainstorming, step by step
 
-Where the harness has a tool for asking the user multiple-choice questions, use it at the
+Use the multiple-choice question tool (`ask_question` in Antigravity) at the
 decision gates (steps 4, 8, 13) and for the questions in step 3.
 
 **Step 3 — before the ideas**
@@ -334,11 +340,11 @@ midway:
 | "They said 'sounds good' to the idea" | Approval covers only what the user has seen. The plan is approved separately, except on the bounded path when you showed both together. |
 | "I don't quite get this, but I'll keep going" | Say it: "I don't understand X". Guessing costs more. |
 | "The plan was wrong here, I'll do it the right way" | Stop and take it to the user. The approval covered the plan as written. |
-| "I'll drop a few quick logs in the working branch" | Only in a temporary worktree, deleted afterwards. |
+| "I'll drop a few quick logs in the working branch" | Only in an isolated workspace (`Workspace: "branch"`), deleted afterwards. |
 | "C could fix this quickly" | C only proposes. Fixes go through step 12. |
 | "The audit came back clean, so it works" | Without B's tests it is not verified. |
 | "The agent's report is thin, but I can guess the rest" | Continue it or relaunch it. A guess is not a report. |
-| "A cheaper model is fine for the audit, the diff is small" | Small diffs hide errors too. C stays on the Deep tier, except as the table allows in step 15. |
+| "A cheaper model is fine for the audit, the diff is small" | Small diffs hide errors too. C stays on the Deep tier, except as the table allows in step 15 or the user accepts the quota fallback in `references/models.md`. |
 | "I'll audit it myself, I know this code" | You wrote it. C is a different agent and, when possible, a different model. |
 | "While I'm here, I'll fix this other thing" | It goes into the plan or the audit as a separate item. |
 | "That fix didn't work, I'll try another" (third time) | Stop and go back to brainstorming: it's a design problem. |

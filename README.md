@@ -1,6 +1,15 @@
 # skills
 
-Agent skills for Claude Code.
+Agent skills for Claude Code and Google Antigravity.
+
+| Skill | For | What it adds |
+|---|---|---|
+| `measure-twice` | Any harness with subagents | The original cycle, described below |
+| `measure-twice-claude` | Claude Code | The cycle plus success criteria, a plan critique, a baseline, resuming, and agents on the Claude model tier that fits each job |
+| `measure-twice-gemini` | Google Antigravity | The same cycle, with Gemini model tiers, Antigravity agent types (`research`, `self`, `browser`), isolated workspaces and a fallback when quota runs out. Models are named only in `references/models.md` |
+
+Install only one of `measure-twice-claude` and `measure-twice-gemini` in a given place:
+both respond to the same requests ("brainstorm", "plan and audit").
 
 ## measure-twice
 
