@@ -84,29 +84,30 @@ Each job goes to the cheapest tier that does it well. The audit is the exception
 the strongest read available, because a missed error costs more than every agent in the
 cycle put together.
 
-| Tier | What it is good for here | Claude models |
-|---|---|---|
-| **Deep** | Design trade-offs, finding errors by reasoning, judging whether a fix is correct | Fable 5.2 (`fable`), Opus 5.5 (`opus`) |
-| **Standard** | Reading and following flows across many files, driving the app and the browser, running and interpreting tests | Sonnet 5.5 (`sonnet`) |
-| **Fast** | Locating files and usages, running a fixed list of commands and returning the output | Haiku 5.5 (`haiku`) |
+| Tier | What it is good for here | Gemini models (Antigravity alias) | Claude equivalents |
+|---|---|---|---|
+| **Deep** | Design trade-offs, finding errors by reasoning, judging whether a fix is correct | Gemini 4 Carbon, Gemini 4 Argon (`gemini-4-argon-high`, `pro`) | Fable 5.2 (`fable`), Opus 5.5 (`opus`) |
+| **Standard** | Reading and following flows across many files, driving the app and the browser, running and interpreting tests | Gemini 4 Hydrogen (`gemini-4-hydrogen-high` / `medium`, `flash`) | Sonnet 5.5 (`sonnet`) |
+| **Fast** | Locating files and usages, running a fixed list of commands and returning the output | Gemini 3.8 Flash (`gemini-3.8-flash-medium` / `low`, `flash_lite`) | Haiku 5.5 (`haiku`) |
 
 | Job | Step | Tier | Model to try first | When to change it |
 |---|---|---|---|---|
-| **You:** conversation, design, plan, implementation, confirming findings | all | Deep | The session's model (Fable 5.2 or Opus 5.5) | If the session runs on a lower tier, say so at step 1: the design and the confirmation of findings are where it shows |
-| **A:** map | 2 | Standard | Sonnet 5.5 | Fast (Haiku 5.5) on a bounded path where the job is only "find the flow and who uses it" |
-| **A:** impact map | 5 | Standard, continued | The same agent A, continued | A fresh Deep agent (Opus 5.5) with A's report when the map shows concurrency, transactions, migrations or more than one subsystem |
-| **B:** how it behaves today; the plan's tests; closing tests | 2, 10, 15 | Standard | Sonnet 5.5 | Fast (Haiku 5.5) when B's whole job is a fixed list of commands with no live tests and no browser |
-| **B:** temporary logs | on demand | Standard | Sonnet 5.5 | Deep if a first instrumented run did not explain the behavior |
-| **C:** plan critique | 7b | Deep | Opus 5.5 | Fable 5.2 if you are running on Opus |
-| **C:** audit | 10 | Deep | Opus 5.5 | Fable 5.2 if you are running on Opus |
-| **C:** review of the fixes' diff | 15 | Deep | The same model as step 10 | Standard (Sonnet 5.5) only when every fix is low or medium severity and touches one function |
+| **You:** conversation, design, plan, implementation, confirming findings | all | Deep | The session's model (Gemini 4 Carbon or Gemini 4 Argon) | If the session runs on a lower tier (such as Gemini 4 Hydrogen), say so at step 1: the design and the confirmation of findings are where it shows |
+| **A:** map | 2 | Standard | Gemini 4 Hydrogen (`flash`) | Fast — Gemini 3.8 Flash (`flash_lite`) — on a bounded path where the job is only "find the flow and who uses it" |
+| **A:** impact map | 5 | Standard, continued | The same agent A, continued | A fresh Deep agent — Gemini 4 Argon (`pro`) — with A's report when the map shows concurrency, transactions, migrations or more than one subsystem |
+| **B:** how it behaves today; the plan's tests; closing tests | 2, 10, 15 | Standard | Gemini 4 Hydrogen (`flash`) | Fast — Gemini 3.8 Flash (`flash_lite`) — when B's whole job is a fixed list of commands with no live tests and no browser |
+| **B:** temporary logs | on demand | Standard | Gemini 4 Hydrogen (`flash`) | Deep — Gemini 4 Argon (`pro`) — if a first instrumented run did not explain the behavior |
+| **C:** plan critique | 7b | Deep | Gemini 4 Argon (`pro`) | Gemini 4 Carbon (or another Deep model such as Opus 5.5) if you are running on Argon |
+| **C:** audit | 10 | Deep | Gemini 4 Argon (`pro`) | Gemini 4 Carbon (or another Deep model such as Opus 5.5) if you are running on Argon |
+| **C:** review of the fixes' diff | 15 | Deep | The same model as step 10 | Standard — Gemini 4 Hydrogen (`flash`) — only when every fix is low or medium severity and touches one function |
 
 Rules for choosing:
 
 - **C reads with a different model than the one that wrote the code, when there is one of
-  the same tier.** If you implemented on Fable 5.2, C runs on Opus 5.5, and the other way
-  round. A second model does not share the first one's blind spots; the same model tends
-  to agree with itself.
+  the same tier.** If you implemented on Gemini 4 Carbon, C runs on Gemini 4 Argon, and the
+  other way round (or on another Deep-tier model available in the harness, such as
+  Gemini 4 Hydrogen XHigh or Opus 5.5). A second model does not share the first one's blind
+  spots; the same model tends to agree with itself.
 - **Never go below Standard for anything that judges** (C in any step, A's impact map).
   Fast is for finding and running, not for deciding whether something is right.
 - **Escalate on evidence, not in advance.** If an agent returns a thin or contradictory
@@ -115,9 +116,11 @@ Rules for choosing:
 - **A continued agent keeps its model.** Continuing A at step 5 is worth more than a
   higher tier, because it has already read the code; switch only in the cases in the
   table.
-- **In Claude Code,** pass the alias in the Agent tool's `model` parameter. If the harness
-  cannot choose models, agents inherit yours and this section reduces to "launch fewer,
-  better-briefed agents".
+- **In Antigravity / Claude Code,** pass the tier alias (`pro`, `flash`, `flash_lite` in
+  `invoke_subagent`, or the exact model ID such as `gemini-4-argon-high`,
+  `gemini-4-hydrogen-high`, `gemini-3.8-flash-medium` in `swarm`; in Claude Code, the
+  `model` parameter of the Agent tool). If the harness cannot choose models, agents
+  inherit yours and this section reduces to "launch fewer, better-briefed agents".
 - **With another provider,** map by tier, not by name: that provider's strongest
   reasoning model is Deep, its general-purpose model is Standard, its small fast model is
   Fast. The rule about C using a different model still applies.
