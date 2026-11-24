@@ -4,7 +4,7 @@ Which Gemini model belongs to each tier in `SKILL.md`, and how to pick it. This 
 only file that names models: when the lineup changes, update this file and the date
 below, not `SKILL.md`.
 
-**Last checked:** 2026-11-13, against the `swarm` tool's `models` list.
+**Last checked:** 2026-11-24, against the `swarm` tool's `models` list.
 
 ## Contents
 
@@ -19,7 +19,7 @@ below, not `SKILL.md`.
 
 | Tier | Gemini model | `invoke_subagent` alias | Exact IDs (`swarm` only) |
 |---|---|---|---|
-| **Deep** | Gemini 4 Argon | `pro` | `gemini-4-argon-high` / `medium` / `low` |
+| **Deep** | Gemini 4 Neon / Carbon / Argon | `pro` | `gemini-4-neon-xhigh` / `high` / `medium` / `low`; `gemini-4-carbon-high` / `medium` / `low`; `gemini-4-argon-high` / `medium` / `low` |
 | **Standard** | Gemini 4 Hydrogen | `flash` | `gemini-4-hydrogen-high` / `medium` / `low` |
 | **Standard, top effort** | Gemini 4 Hydrogen XHigh | — | `gemini-4-hydrogen-xhigh` |
 | **Fast** | Gemini 3.8 Flash | `flash_lite` | `gemini-3.8-flash-high` / `medium` / `low` |
@@ -27,10 +27,14 @@ below, not `SKILL.md`.
 - **Hydrogen XHigh is Standard, not Deep.** It is the same model at its highest reasoning
   effort. It is the first fallback for C when Deep is not available (see "When quota runs
   out"), and it is never what you pick first for a job the table in `SKILL.md` marks Deep.
-- **Gemini 4 Carbon** may be offered as the session's model in the model selector, but it
-  was not in the list of models that subagents can run on when this file was last
-  checked. Do not plan a C on Carbon; if Carbon shows up in that list, it counts as Deep
-  and is the preferred C when you run on Argon.
+- **Deep lineup (`Neon`, `Carbon`, `Argon`):** all three are now present in the `swarm`
+  `models` list (alongside their orchestrator variants `gemini-pro-orchestrator-neon`,
+  `gemini-pro-orchestrator` and `gemini-pro-orchestrator-argon`). In `swarm`, prefer a
+  different Deep model for C than the session's model (for example, Carbon or Argon when
+  the session runs on Neon; or Neon/Carbon when on Argon). Also available in `swarm` for
+  cross-provider diversity when requested: `claude-opus-5-5-high` / `medium` / `low`
+  (Deep), `claude-sonnet-5-5-high` / `medium` / `low` (Standard), and
+  `gpt-oss-120b-medium`.
 - The aliases point to tiers. Which exact model sits behind each one is decided by the
   harness, so the table above describes the mapping found on the date at the top. If
   an agent's report shows a different model, record the one it actually ran on.
@@ -44,9 +48,9 @@ below, not `SKILL.md`.
   start one just to choose a model or an effort level. Use it only when the user asks for
   a swarm.
 - **A different model for C.** With `invoke_subagent` you choose a tier, not a model.
-  - If you run on a model outside Argon (Carbon, or a model from another provider),
-    `pro` already gives C a different model.
-  - If you run on Argon, `pro` gives C the same model. That is acceptable: C is a fresh
+  - If you run on a Deep model different from whichever model `pro` resolves to (or a
+    model from another provider), `pro` already gives C a different model.
+  - If `pro` resolves to the same model you run on, that is acceptable: C is a fresh
     agent that has not seen your reasoning, and the tier matters more than the variety
     (see "Rules for choosing" in `SKILL.md`). Say in the audit that C ran on the same
     model as you.
